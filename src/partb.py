@@ -338,9 +338,28 @@ def count_data_4():
     print('-------------------------')
 
 
+def count_data_5():
+    salary_cap = pd.read_csv('../data/salarycap.csv')
+    caps = {}
+    caps_2021 = {}
+    for _, data in salary_cap.iterrows():
+        caps[data['Year']] = float(data['Salary_Cap'])
+        caps_2021[data['Year']] = float(data['2021_Dollars'])
+
+    print("5. ")
+    t = "{0:^10}\t{1:^10}\t{2:^10}\t{3:^10}\t{4:^10}"
+    print(t.format("Data", "Average", "Std", "Min", "Max"))
+    print(t.format("Cap", round(np.mean([v for v in caps.values()]), 2), round(np.std([v for v in caps.values()]), 2),
+                   min([v for v in caps.values()]), max([v for v in caps.values()])))
+    print(t.format("Cap2021", round(np.mean([v for v in caps_2021.values()]), 2), round(np.std([v for v in caps_2021.values()]), 2),
+                   min([v for v in caps_2021.values()]), max([v for v in caps_2021.values()])))
+    print('-------------------------')
+
+
 
 if __name__ == '__main__':
     count_data_1()
-    # count_data_2()
-    # count_data_3()
-    # count_data_4()
+    count_data_2()
+    count_data_3()
+    count_data_4()
+    count_data_5()
