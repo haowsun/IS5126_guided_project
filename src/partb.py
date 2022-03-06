@@ -161,6 +161,9 @@ def count_data_3():
 
 
 def count_data_4():
+    Team_map = {'New Jersey Nets': 'Brooklyn Nets', 'Charlotte Bobcats': 'Charlotte Hornets',
+                'New Orleans Hornets': 'New Orleans Pelicans'}
+    Tm_map = {'NJN': 'BRK', 'CHA': 'CHO', 'NOH': 'NOP'}
     ## count
     # 4a
     min_salary = 925258
@@ -169,25 +172,80 @@ def count_data_4():
     for _, data in salary.iterrows():
         if data['Salary'] == '< Minimum':
             data['Salary'] = min_salary
+        if data['Team'] in Team_map.keys():
+            data['Team'] = Team_map[data['Team']]
     salary['Salary'] = salary['Salary'].astype(int)
     salary_mean = salary.groupby(['Season', 'Team'])['Salary'].mean()
 
     # 4b
+    total = pd.read_csv('../data/total.csv')
+    for i, t in total.iterrows():
+        if t['Tm'] in Tm_map.keys():
+            total.loc[i, 'Tm'] = Tm_map[t['Tm']]
+    total = total[total['Is_playoff'] == 0]
 
+    age_mean = total.groupby(['Season', 'Tm'])['Age'].mean()
+
+    team_player = pd.read_csv('../data/team_player.csv')
+    for i, tp in team_player.iterrows():
+        if tp['Team'] in Team_map.keys():
+            team_player.loc[i, 'Team'] = Team_map[tp['Team']]
+    team_player.loc[team_player['Exp'] == 'R', 'Exp'] = 0
+    team_player['Exp'] = team_player['Exp'].astype(int)
+
+    group = team_player.groupby(['Season', 'Team'])
+
+    exp_mean = group['Exp'].mean()
+    exp_mean = exp_mean.rename('avg_exp')
+    exp_var = group['Exp'].var()
+    exp_var = exp_var.rename('var_exp')
+    exp = pd.merge(exp_mean, exp_var, left_index=True, right_index=True)
+
+    # 4c
+    salary_mean_df = salary_mean.reset_index()
+    age_mean_df = age_mean.reset_index()
+    exp_df = exp.reset_index()
+    salary_mean_df = pd.pivot_table(salary_mean_df, columns=['Season'], index=["Team"])
+    age_mean_df = pd.pivot_table(age_mean_df, columns=['Season'], index=["Tm"])
+    exp_mean_df = pd.pivot_table(exp_df, columns=['Season'], index=["Team"], values=['avg_exp'])
+    exp_var_df = pd.pivot_table(exp_df, columns=['Season'], index=["Team"], values=['var_exp'])
 
     ## save
     # 4a
-    salary_mean.to_csv("../data/avg_salary_team_season.csv")
-
+    salary_mean.to_csv("../output/avg_salary.csv")
+    # 4b
+    age_mean.to_csv("../output/avg_age.csv")
+    exp.to_csv("../output/avg_var_exp.csv")
+    # 4c
+    salary_mean_df.to_csv("../output/avg_salary_ct.csv")
+    age_mean_df.to_csv("../output/avg_age_ct.csv")
+    exp_mean_df.to_csv("../output/avg_exp_ct.csv")
+    exp_var_df.to_csv("../output/var_exp_ct.csv")
 
     ## print
     print("4a. ")
     print(salary_mean)
     print('-------------------------')
 
+    print("4b. ")
+    print("average ag of the players by season:")
+    print(age_mean)
+    print("Average and variance of experience by season of each team")
+    print(exp)
+    print('-------------------------')
 
-    
-    return;
+    print("4c. ")
+    print("cross-tabulation format for average salary")
+    print(salary_mean_df)
+    print("cross-tabulation format for average age")
+    print(age_mean_df)
+    print("cross-tabulation format for average of experience")
+    print(exp_mean_df)
+    print("cross-tabulation format for variance of experience")
+    print(exp_var_df)
+    print('-------------------------')
+
+
 
 if __name__ == '__main__':
     # count_data_2()
