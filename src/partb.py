@@ -92,8 +92,9 @@ def count_data_1():
     df_5 = pd.merge(df_4, team_selected, on=['Season', 'Team'])
 
     # fill missing value
+    df_5.fillna(value={'Playoffs': 'Not In'}, inplace=True)
     haveNullAttr = df_5.isnull().any()
-
+    df_5 = df_5[~df_5.isna().T.any()]
 
     print("all data")
     print(df_5)
