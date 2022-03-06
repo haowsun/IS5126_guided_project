@@ -4,10 +4,101 @@ import numpy as np
 import datetime
 
 def count_data_1():
-    total = pd.read_csv('../data/total.csv')
+    team_dict = {
+        "ATL": "Atlanta Hawks",
+        "BOS": "Boston Celtics",
+        "BRK": "Brooklyn Nets",
+        "NJN": "New Jersey Nets",
+        "CHA": "Charlotte Bobcats",
+        "CHO": "Charlotte Hornets",
+        "CHI": "Chicago Bulls",
+        "CLE": "Cleveland Cavaliers",
+        "DAL": "Dallas Mavericks",
+        "DEN": "Denver Nuggets",
+        "DET": "Detroit Pistons",
+        "GSW": "Golden State Warriors",
+        "HOU": "Houston Rockets",
+        "IND": "Indiana Pacers",
+        "LAC": "Los Angeles Clippers",
+        "LAL": "Los Angeles Lakers",
+        "MEM": "Memphis Grizzlies",
+        "MIA": "Miami Heat",
+        "MIL": "Milwaukee Bucks",
+        "MIN": "Minnesota Timberwolves",
+        "NOH": "New Orleans Hornets",
+        "NOP": "New Orleans Pelicans",
+        "NYK": "New York Knicks",
+        "OKC": "Oklahoma City Thunder",
+        "ORL": "Orlando Magic",
+        "PHI": "Philadelphia 76ers",
+        "PHO": "Phoenix Suns",
+        "POR": "Portland Trail Blazers",
+        "SAC": "Sacramento Kings",
+        "SAS": "San Antonio Spurs",
+        "TOR": "Toronto Raptors",
+        "UTA": "Utah Jazz",
+        "WAS": "Washington Wizards"
+    }
+    salary_df = pd.read_csv("../data/salary.csv")
+    p36m_df = pd.read_csv("../data/p36m.csv")
+    p100p_df = pd.read_csv("../data/p100p.csv")
+    pergame_df = pd.read_csv("../data/pergame.csv")
+    total_df = pd.read_csv("../data/total.csv")
+    advanced_df = pd.read_csv("../data/advanced.csv")
+    team_df = pd.read_csv("../data/team_seasonal_index.csv")
+
+    ## clean dataset
+    # formate seasion e.g. 2009-10 -> 2009
+    salary_df['Season'] = pd.Series(salary_df['Season'], dtype="string").map(lambda x: x[:4])
+    p36m_df['Season'] = pd.Series(p36m_df['Season'], dtype="string").map(lambda x: x[:4])
+    p100p_df['Season'] = pd.Series(p100p_df['Season'], dtype="string").map(lambda x: x[:4])
+    pergame_df['Season'] = pd.Series(pergame_df['Season'], dtype="string").map(lambda x: x[:4])
+    advanced_df['Season'] = pd.Series(advanced_df['Season'], dtype="string").map(lambda x: x[:4])
+    total_df['Season'] = pd.Series(total_df['Season'], dtype="string").map(lambda x: x[:4])
+    team_df['Season'] = pd.Series(team_df['Season'], dtype="string").map(lambda x: x[:4])
+
+    # only regular game
+    p36m_regular_df = p36m_df[p36m_df['Is_playoff'] == 0]
+    p100p_regular_df = p100p_df[p100p_df['Is_playoff'] == 0]
+    pergame_regular_df = pergame_df[pergame_df['Is_playoff'] == 0]
+    advanced_regular_df = advanced_df[advanced_df['Is_playoff'] == 0]
+    total_regular_df = total_df[total_df['Is_playoff'] == 0]
+
+    # Use Team instead Tm
+    p36m_regular_df["Tm"] = p36m_regular_df["Tm"].map(team_dict)
+    p100p_regular_df["Tm"] = p100p_regular_df["Tm"].map(team_dict)
+    pergame_regular_df["Tm"] = pergame_regular_df["Tm"].map(team_dict)
+    advanced_regular_df["Tm"] = advanced_regular_df["Tm"].map(team_dict)
+    total_regular_df["Tm"] = total_regular_df["Tm"].map(team_dict)
+    p36m_regular_df.rename(columns={'Tm': 'Team'}, inplace=True)
+    p100p_regular_df.rename(columns={'Tm': 'Team'}, inplace=True)
+    pergame_regular_df.rename(columns={'Tm': 'Team'}, inplace=True)
+    advanced_regular_df.rename(columns={'Tm': 'Team'}, inplace=True)
+    total_regular_df.rename(columns={'Tm': 'Team'}, inplace=True)
+
+    # merge
+    salary_df.drop(['Lg', 'Born'], axis=1, inplace=True)
+
+    df_1 = pd.merge(p36m_regular_df, salary_df, on=['Name', 'Season', 'Team'])
+    p100p_selected = p100p_regular_df[['Name', 'Season', 'Team', 'TRB', 'AST', 'PTS']]
+    p100p_selected.rename(columns={'TRB': "TRB_p100p", 'AST': "AST_p100p", 'PTS': "PTS_p100p"}, inplace=True)
+    df_2 = pd.merge(df_1, p100p_selected, on=['Name', 'Season', 'Team'])
+    pergame_selected = pergame_regular_df[['Name', 'Season', 'Team', 'TRB', 'AST', 'PTS']]
+    pergame_selected.rename(columns={'TRB': "TRB_pergame", 'AST': "AST_pergame", 'PTS': "PTS_pergame"}, inplace=True)
+    df_3 = pd.merge(df_2, pergame_selected, on=['Name', 'Season', 'Team'])
+    advanced_selected = advanced_regular_df[['Name', 'Season', 'Team', 'PER', 'TS%', 'WS', 'VORP']]
+    df_4 = pd.merge(df_3, advanced_selected, on=['Name', 'Season', 'Team'])
+    team_selected = team_df[['Season', 'Team', 'W/L%', 'SRS', 'Playoffs']]
+    df_5 = pd.merge(df_4, team_selected, on=['Season', 'Team'])
+
+    # fill missing value
+    haveNullAttr = df_5.isnull().any()
 
 
-
+    print("all data")
+    print(df_5)
+    df_5.to_csv('../output/data.csv')
+    print('-------------------------')
 
 
 
@@ -248,6 +339,7 @@ def count_data_4():
 
 
 if __name__ == '__main__':
+    count_data_1()
     # count_data_2()
     # count_data_3()
-    count_data_4()
+    # count_data_4()
